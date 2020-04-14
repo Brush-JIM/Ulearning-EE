@@ -1,0 +1,75 @@
+# 日志  
+
+## 20.04.14
+* 改进样式
+
+## 20.04.08
+* 优化代码
+* 在 课程资源 中 增加 “下载” 按钮，方便下载
+
+## 19.11.27
+* 取消总是显示语法检测
+
+## 19.09.22
+* 更新代码适配网页
+
+## 19.09.11
+* 将讨论页面的回复框加大
+
+## 19.09.08
+* 取消判断是否登录成功的功能
+* 取消更改头像
+
+## 19.06.07
+* 端午节快乐呀
+* 高考快乐 too
+* 增加了一娱乐功能，访问[https://www.ulearning.cn/umooc/learner/learner.do?operation=index](https://www.ulearning.cn/umooc/learner/learner.do?operation=index)会修改动态头像
+
+## 19.06.02.1
+* Fix a Bug.
+
+## 19.06.02
+* 改善代码
+
+## 19.05.28
+* 改进代码
+
+## 19.05.27
+* 原项目名“YouXueYuan-Auto_Login”现更名为“YouXueYuan-JavaScript”，原项目名“YouXueYuan-JavaScript”现更名为“YouXueYuan_Watch-Video”
+* 现项目将不局限于自动登录
+* 目前增加新功能：自动实时作业查重
+* 脚本更名为“优学院脚本.user.js”
+
+## 19.05.21
+* 一些原因，项目删除、重新上传。
+* 弃用localStorage，重新使用GM_* （看了其他大神写的脚本用GM_*，自己也学会）
+
+## 19.05.05.2
+* Fix a bug again.
+
+## 19.05.05.1
+* Fix a bug.
+
+# 19.5.5 V2019.05.05
+* 增加自动检测是否真正登录，因为优学院有时候首页显示已经登录但实际登录状态已经失效
+
+## 19.5.4 V2019.05.04
+* 复原原退出按钮（原来会改为点击后重置登录信息），增加重置按钮
+* search函数换为indexOf函数
+
+## 19.4.30 V2.0
+* 重构脚本
+* 使用更多方法实现功能
+
+## 19.4.27 V1.2
+* 改变自动登录方式，不再增加“自动登录”按钮，直接改变原登录按钮，点击后以后可自动登录
+
+## 19.4.23 V1.0
+* 取消GM函数
+* 支持Greasemonkey
+* 重构脚本
+
+## 19.4.7 V0.1
+* 上传第一份  
+* 其实很早之前就开始写，只是懒得完善，现在放假，于是完善代码  
+* 注意！脚本使用了Tampermonkey的GM_setValue、 GM_getValue、GM_deleteValue；而Greasemonkey中是使用GM.setValue、GM.getValue、GM.deleteValue，但我没测试过，所以没有增加GM.setValue、GM.getValue、GM.deleteValue。所以Greasemonkey下使用可能会有问题。所以我没有将这个项目合并到看视频项目，以防影响其他功能（虽然理论上不会），也为了减少维护难度。
