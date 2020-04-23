@@ -2,7 +2,7 @@
 // @name         优学院增强体验【非刷课】
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
 // @version      2020.04.23
-// @description  用于优学院自动登录【默认关闭】、作业实时自动查重、资源文件增加下载按钮
+// @description  用于优学院自动登录【默认关闭】、作业实时自动查重、资源文件增加下载按钮、直播M3U8文件下载
 // @author       Brush-JIM
 // @match        *.tongshike.cn/*
 // @match        *.ulearning.cn/*
