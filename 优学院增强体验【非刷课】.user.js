@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         优学院增强体验【非刷课】
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.04.14
+// @version      2020.04.23
 // @description  用于优学院自动登录【默认关闭】、作业实时自动查重、资源文件增加下载按钮
 // @author       Brush-JIM
 // @match        *.tongshike.cn/*
 // @match        *.ulearning.cn/*
+// @match        *://live.polyv.cn/watch/*
 // @grant        unsafeWindow
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -13,6 +14,9 @@
 // @grant        GM.setValue
 // @grant        GM_deleteValue
 // @grant        GM.deleteValue
+// @grant        GM_xmlhttpRequest
+// @grant        GM.xmlHttpRequest
+// @connect      api.polyv.net
 // @run-at       document-start
 // @require      https://code.jquery.com/jquery-3.3.1.min.js
 // @icon         https://www.ulearning.cn/ulearning/favicon.ico
@@ -305,6 +309,49 @@
             }
         }
     }
+    else if (window.location.href.indexOf('live.polyv.cn/watch/') != -1){
+        $().ready(function(){
+            var chatData = unsafeWindow.chatData;
+            var isLive = chatData.isLive,
+                liveStatus = chatData.liveStatus;
+            var channelId = chatData.channelId;
+            var url = 'https://api.polyv.net/live/v2/channel/recordFile/' + channelId +'/jsonp/playback-list?callback=jQuery0_1&pageSize=5&_=' + (new Date()).valueOf() + '&page=';
+            if(chatData === undefined){return;}
+            if(isLive != 'end' && liveStatus != 'end'){return;}
+            get_download_url();
+            function get_download_url(page, li){
+                page = page || 1
+                let first = true;
+                if(li != undefined){first=false}
+                li = li || document.createElement('li');
+                if(first==true){li.innerHTML = '------------------------------<br />'}
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: url + page,
+                    onload: function(response){
+                        var data = response.responseText.match(/jQuery0_1\((.*)\)/);
+                        if(data===null){return}
+                        data = JSON.parse(data[1])
+                        li.className = 'web-flower';
+                        for(let a=0; a<data.contents.length; a++){
+                            li.innerHTML += '<a style="color: white" href="' +
+                                data.contents[a].fileUrl + '">点击下载 M3U8 文件：' + data.contents[a].title + '</a>' +
+                                '<br />';
+                        }
+                        if(data.totalItems > data.pageNumber * data.pageSize){
+                            get_download_url(data.pageNumber + 1, li);
+                        }
+                        else{
+                            li.innerHTML += '------------------------------<br />'
+                            document.querySelector('ul[class="ppt-chat-list"]').appendChild(li);
+                            let ele = document.querySelector('#pptMessage');
+                            ele.scrollTop = ele.scrollHeight;
+                        }
+                    }
+                })
+            }
+        })
+    }
 
     // getCookie & setCookie 源自优学院网站源代码
     function getCookie(c_name) {
@@ -361,6 +408,14 @@
         }
         else {
             GM.deleteValue( name );
+        }
+    }
+    function gm_xml( obj ){
+        if ( typeof GM_xmlhttpRequest === 'function') {
+            GM_xmlhttpRequest(obj);
+        }
+        else{
+            GM.xmlHttpRequest(obj);
         }
     }
 })();
