@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         优学院增强体验【非刷课】
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.04.23.1
+// @version      2020.04.24
 // @description  用于优学院自动登录【默认关闭】、作业实时自动查重、资源文件增加下载按钮、直播M3U8文件下载
 // @author       Brush-JIM
 // @match        *.tongshike.cn/*
@@ -335,7 +335,7 @@
                         li.className = 'web-flower';
                         for(let a=0; a<data.contents.length; a++){
                             li.innerHTML += '<a style="color: white" href="' +
-                                data.contents[a].fileUrl + '">点击下载 M3U8 文件：' + data.contents[a].title + '</a>' +
+                                data.contents[a].url + '">点击下载 M3U8 文件：' + data.contents[a].title + '</a>' +
                                 '<br />';
                         }
                         if(data.totalItems > data.pageNumber * data.pageSize){
