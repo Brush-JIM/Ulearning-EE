@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         优学院增强体验【非刷课】
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.04.24
-// @description  用于优学院自动登录【默认关闭】、作业实时自动查重、资源文件增加下载按钮、直播M3U8文件下载
+// @version      2020.05.22
+// @description  用于优学院自动登录【默认关闭】、作业实时自动查重、资源文件增加下载按钮、直播M3U8文件下载、直播流获取
 // @author       Brush-JIM
 // @match        *.tongshike.cn/*
 // @match        *.ulearning.cn/*
@@ -18,7 +18,7 @@
 // @grant        GM.xmlHttpRequest
 // @connect      api.polyv.net
 // @run-at       document-start
-// @require      https://code.jquery.com/jquery-3.3.1.min.js
+// @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js
 // @icon         https://www.ulearning.cn/ulearning/favicon.ico
 // @supportURL   https://greasyfork.org/zh-CN/scripts/383596
 // @webRequest   [{"selector":"https://hm.baidu.com/*","action":"cancel"}]
@@ -311,6 +311,32 @@
     }
     else if (window.location.href.indexOf('live.polyv.cn/watch/') != -1){
         $().ready(function(){
+            unsafeWindow.fetch_ = unsafeWindow.fetch;
+            unsafeWindow.fetch = function(url ,data){
+                if(url.indexOf('pull-c1.videocc.net') != -1){
+                    unsafeWindow.live_url=url;
+                }
+                return unsafeWindow.fetch_(url, data);
+            }
+            unsafeWindow.setItem_ = unsafeWindow.sessionStorage.setItem;
+            unsafeWindow.sessionStorage.setItem = function(a,b){
+                if(a=='errorCode'){
+                    if(unsafeWindow.live_url != undefined && unsafeWindow.live_url != ''){
+                        let li = document.createElement('li');
+                        li.style="color: yellow";
+                        li.className = 'web-flower';
+                        li.innerHTML = '------------------------------<br />';
+                        li.innerHTML += '检测到直播可能错误<br />可使用直播流地址变相拯救：<a style="color: white" target="_blank" href="' + unsafeWindow.live_url + '">直播链接</a><br />或者尝试使用手机端观看直播<br />';
+                        // li.innerHTML += '拯救方法：<a style="color: white" target="_blank" href="#">点击查看</a><br />'
+                        li.innerHTML += '------------------------------<br />'
+                        document.querySelector('ul[class="ppt-chat-list"]').appendChild(li);
+                    }
+                }
+                return unsafeWindow.setItem_(a,b);
+            }
+            if(unsafeWindow.sessionStorage.getItem('errorCode') != ""){
+                unsafeWindow.sessionStorage.clear();
+            }
             var chatData = unsafeWindow.chatData;
             var isLive = chatData.isLive,
                 liveStatus = chatData.liveStatus;
