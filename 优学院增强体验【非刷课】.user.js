@@ -18,7 +18,7 @@
 // @grant        GM.xmlHttpRequest
 // @connect      api.polyv.net
 // @run-at       document-start
-// @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js
+// @require      https://code.jquery.com/jquery-3.3.1.min.js
 // @icon         https://www.ulearning.cn/ulearning/favicon.ico
 // @supportURL   https://greasyfork.org/zh-CN/scripts/383596
 // @webRequest   [{"selector":"https://hm.baidu.com/*","action":"cancel"}]
