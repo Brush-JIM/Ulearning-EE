@@ -315,6 +315,12 @@
             unsafeWindow.fetch = function(url ,data){
                 if(url.indexOf('pull-c1.videocc.net') != -1){
                     unsafeWindow.live_url=url;
+                    let li = document.createElement('li');
+                    li.innerHTML = '------------------------------<br />';
+                    li.className = 'web-flower';
+                    li.innerHTML += '<a style="color: white" target="_blank" href="' + url + '">直播链接</a>'
+                    li.innerHTML += '------------------------------<br />'
+                    document.querySelector('ul[class="ppt-chat-list"]').appendChild(li);
                 }
                 return unsafeWindow.fetch_(url, data);
             }
