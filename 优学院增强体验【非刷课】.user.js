@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         优学院增强体验【非刷课】
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.05.22
+// @version      2020.05.26
 // @description  用于优学院自动登录【默认关闭】、作业实时自动查重、资源文件增加下载按钮、直播M3U8文件下载、直播流获取
 // @author       Brush-JIM
 // @match        *.tongshike.cn/*
@@ -318,7 +318,7 @@
                     let li = document.createElement('li');
                     li.innerHTML = '------------------------------<br />';
                     li.className = 'web-flower';
-                    li.innerHTML += '<a style="color: white" target="_blank" href="' + url + '">直播链接</a>'
+                    li.innerHTML += '<a style="color: white" target="_blank" href="' + url + '">直播流地址【右键复制链接地址】</a><br />'
                     li.innerHTML += '------------------------------<br />'
                     document.querySelector('ul[class="ppt-chat-list"]').appendChild(li);
                 }
@@ -332,7 +332,7 @@
                         li.style="color: yellow";
                         li.className = 'web-flower';
                         li.innerHTML = '------------------------------<br />';
-                        li.innerHTML += '检测到直播可能错误<br />可使用直播流地址变相拯救：<a style="color: white" target="_blank" href="' + unsafeWindow.live_url + '">直播链接</a><br />或者尝试使用手机端观看直播<br />';
+                        li.innerHTML += '检测到直播可能错误<br /><font color="red">插件可能影响直播（如IDM插件），可禁用全部插件后，一个一个开启插件，刷新页面测试</font><br />可使用直播流地址变相拯救：<a style="color: white" target="_blank" href="' + unsafeWindow.live_url + '">直播链接</a><br />或者尝试使用手机端观看直播<br />';
                         // li.innerHTML += '拯救方法：<a style="color: white" target="_blank" href="#">点击查看</a><br />'
                         li.innerHTML += '------------------------------<br />'
                         document.querySelector('ul[class="ppt-chat-list"]').appendChild(li);
