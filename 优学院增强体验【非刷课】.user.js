@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         优学院增强体验【非刷课】
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.05.26
-// @description  用于优学院自动登录【默认关闭】、作业实时自动查重、资源文件增加下载按钮、直播M3U8文件下载、直播流获取
+// @version      2020.05.28
+// @description  用于优学院自动登录【默认关闭】、作业实时自动查重、资源文件增加下载按钮、直播M3U8文件下载、直播流获取、解除Edge兼容性
 // @author       Brush-JIM
 // @match        *.tongshike.cn/*
 // @match        *.ulearning.cn/*
@@ -183,6 +183,17 @@
     }
     else if (window.location.href.indexOf('learnCourse/learnCourse.html') != -1) {
         unsafeWindow.localStorage.removeItem('failureRecord');
+        if (unsafeWindow.navigator.__defineGetter__) {
+            unsafeWindow.navigator.__defineGetter__("userAgent", function () {
+                return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36";
+            });
+        } else if (Object.defineProperty) {
+            Object.defineProperty(unsafeWindow.navigator, "userAgent", {
+                get: function () {
+                    return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36";
+                }
+            });
+        }
     }
     else if (window.location.href.indexOf('courseweb.ulearning.cn/ulearning/index.html') != -1){
         if (hash_find('course/resource') != -1) {
