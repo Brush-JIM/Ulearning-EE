@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         优学院增强体验【非刷课】
+// @name         优学院增强体验脚本
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.05.28
-// @description  用于优学院自动登录【默认关闭】、作业实时自动查重、资源文件增加下载按钮、直播M3U8文件下载、直播流获取、解除Edge兼容性
+// @version      2020.06.02
+// @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除Edge兼容性、直播间自动签到
 // @author       Brush-JIM
 // @match        *.tongshike.cn/*
 // @match        *.ulearning.cn/*
@@ -16,449 +16,383 @@
 // @grant        GM.deleteValue
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
+// @grant        GM_addStyle
 // @connect      api.polyv.net
 // @run-at       document-start
-// @require      https://code.jquery.com/jquery-3.3.1.min.js
+// @require      https://code.jquery.com/jquery-3.5.1.min.js
 // @icon         https://www.ulearning.cn/ulearning/favicon.ico
 // @supportURL   https://greasyfork.org/zh-CN/scripts/383596
 // @webRequest   [{"selector":"https://hm.baidu.com/*","action":"cancel"}]
 // ==/UserScript==
 
-(function() {
-    'use strict';
-    // 需要自动登录，将下面的 auto_login = 1
-    var auto_login = 0;
-
-    if ( window.location.href.indexOf( 'homework.ulearning.cn' ) != -1 ) {
-        var userID = '';
-        var homeworkID = '';
-        var time_ = Date.parse( new Date());
-        var text_ = '';
-        function wait_ele() {
-            if ( document.querySelector('textarea') == null ) {
-                setTimeout(wait_ele, 50);
+var obj = {
+    /*
+    如果需要启用相应功能，则将 false 改为 true
+    如果需要禁用相应功能，则将 true 改为 false
+    */
+    Auto_Login: false // true: 启用自动登录，false: 禁用自动登录
+    , Pw_Tips: false // true: 跳过弱密码提示，false: 不跳过
+    , Work_Check: true // true: 启用作业查重，false: 禁用作业查重
+    , Show_M3U8: true // true: 显示直播m3u8文件下载地址，false: 禁用显示
+    , Show_Live: true // true: 显示直播流链接，false: 禁用显示
+    , Browser_Compatible: false // true: 启用浏览器兼容，false: 禁用浏览器兼容。正常的浏览器无需开启，开启也不会有影响，主要用于Edge浏览器
+    , Live_Sign: false // true: 启用直播间自动签到，false: 禁用直播间签到
+}
+var Value = {
+    userId: '',
+    hId: '',
+    setItem: null,
+    live_url: '',
+    chatData: '',
+    isLive: '',
+    liveStatus: '',
+    channelId: '',
+    hxml: false
+}
+var _self = unsafeWindow;
+var $ = window.jQuery;
+_self.jQuery_ = $;
+var func = [function () {
+        var cookie = _self.document.cookie
+            if (cookie.length > 0) {
+                var start = cookie.indexOf(arguments[0] + "=");
+                if (start != -1) {
+                    start = start + arguments[0].length + 1;
+                    var end = cookie.indexOf(";", start);
+                    if (end == -1) {
+                        end = cookie.length;
+                    }
+                    return unescape(cookie.substring(start, end).replace(/(%[0-9A-Z]{2})+/g, decodeURIComponent));
+                }
             }
-            else {
-                if ( window.location.hash.search( /#\/stuWriting\/([0-9]*)\/([0-9]*)\/\?([\s\S]*)/ ) != -1 ) {
-                    userID = window.location.hash.match( /#\/stuWriting\/([0-9]*)\/([0-9]*)\/\?([\s\S]*)/ )[ 1 ];
-                    homeworkID = window.location.hash.match( /#\/stuWriting\/([0-9]*)\/([0-9]*)\/\?([\s\S]*)/ )[ 2 ];
+            return "";
+    }, function () {
+        if (typeof GM_getValue === 'function') {
+            return new Promise((resolve, reject) => {
+                resolve(GM_getValue(arguments[0], arguments[1]));
+            })
+        } else {
+            return GM.getValue(arguments[0], arguments[1]);
+        }
+    }, function () {
+        if (typeof GM_setValue === 'function') {
+            GM_setValue(arguments[0], arguments[1]);
+        } else {
+            GM.setValue(arguments[0], arguments[1]);
+        }
+    }, function () {
+        if (typeof GM_deleteValue === 'function') {
+            GM_deleteValue(arguments[0]);
+        } else {
+            GM.deleteValue(arguments[0]);
+        }
+    }, function () {
+        if (typeof GM_xmlhttpRequest === 'function') {
+            GM_xmlhttpRequest(arguments[0]);
+        } else {
+            GM.xmlHttpRequest(arguments[0]);
+        }
+    }, function () {
+        if (arguments[0] === undefined) {
+            func[arguments[1] - 4]('username').then((username) => {
+                if (username === undefined) {
+                    return func[6].call(window, false, 6);
+                } else {
+                    return func[arguments[1]].call(window, username, arguments[1])
                 }
-                else if ( window.location.hash.search( /#\/stuWriting\/([0-9]*)\/([0-9]*)\?([\s\S]*)/ ) != -1 ) {
-                    userID = window.location.hash.match( /#\/stuWriting\/([0-9]*)\/([0-9]*)\?([\s\S]*)/ )[ 1 ];
-                    homeworkID = window.location.hash.match( /#\/stuWriting\/([0-9]*)\/([0-9]*)\?([\s\S]*)/ )[ 2 ];
+            })
+        } else {
+            func[arguments[1] - 4]('password').then((password) => {
+                if (password === undefined) {
+                    return func[6].call(window, false, 6);
+                } else {
+                    return func[6].call(window, {
+                        'username': arguments[0],
+                        'password': password
+                    }, 6)
                 }
-                else {
-                    setTimeout(wait_ele, 100);
+            })
+        }
+    }, function () {
+        if (obj.Auto_Login !== true) {
+            return;
+        }
+        if (arguments[0] === undefined) {
+            func[5].call(window, undefined, arguments[1] - 1)
+        } else {
+            var data = arguments[0];
+            if ($('div[class="btn-login"]').length !== 0) {
+                if ($('div[class="login-btn-text"]').length !== 0) {
+                    if ($("#userLoginModal").length === 0) {
+                        $('div[class="login-btn-text"]').click();
+                        setTimeout(func[6], 50, data, arguments[1]);
+                    } else {
+                        if ($("#userLoginModal")[0].style.cssText.search(/display:( |)none/i) !== -1) {
+                            $('div[class="login-btn-text"]').click();
+                        }
+                        if (obj.Auto_Login === true && data !== false) {
+                            $('#userLoginName')[0].value = data.username;
+                            $('#userPassword')[0].value = data.password;
+                            $('button[class="button button-red-solid btn-confirm"]', $('form[id="loginForm"]')).click()
+                            setInterval(function () {
+                                if ($('div[class="student-tip"]', $('form[id="loginForm"]')).length !== 0) {
+                                    if ($('div[class="student-tip"]', $('form[id="loginForm"]'))[0].style.cssText.search(/display:( |)block/i) !== -1) {
+                                        func[arguments[0]].call(window, 'username');
+                                        func[arguments[0]].call(window, 'password');
+                                    }
+                                }
+                            }, 50, arguments[1] - 3);
+                        } else if (obj.Auto_Login === true && data === false) {
+                            $('button[class="button button-red-solid btn-confirm"]', $('form[id="loginForm"]')).bind('click', function () {
+                                func[2].call(window, 'username', $('#userLoginName')[0].value);
+                                func[2].call(window, 'password', $('#userPassword')[0].value);
+                            })
+                        }
+                    }
+                } else if ($('.user-control-menu').length !== 0) {
+                    $('[data-bind="click: logout, text: publicI18nText.signout"]')[0].innerText = '重新登录';
+                    $('[class="user-control-menu"]').append('<a class="user-menu-item" id="resetlogin">重置登录信息</a>');
+                    $("[id='resetlogin']").bind('click', function () {
+                        func[3].call(window, 'username');
+                        func[3].call(window, 'password');
+                        alert("重置成功");
+                        $('[data-bind="click: logout, text: publicI18nText.signout"]')[0].click();
+                    })
+                } else {
+                    setTimeout(func[6], 50, data, arguments[1]);
+                }
+            } else {
+                setTimeout(func[6], 50, data, arguments[1]);
+            }
+        }
+    }, function () {
+        if (obj.Pw_Tips === true) {
+            if (window.location.href.indexOf('courseweb.ulearning.cn/ulearning/index.html') !== -1) {
+                func[arguments[1] + 1].call(window, '.modal-backdrop {display: none;}');
+                func[arguments[1] + 1].call(window, '#bindTip {display: none;}');
+            } else if (window.location.href.indexOf('umooc/user/login.do') != -1) {
+                window.location.href = 'https://www.ulearning.cn/ulearning/index.html#/index/portal';
+            }
+        }
+    }, function () {
+        if (typeof GM_addStyle === 'function') {
+            GM_addStyle(arguments[0].replace(/;/g, ' !important;'));
+        } else {
+            $(function () {
+                var head,
+                style;
+                head = document.getElementsByTagName('head')[0];
+                if (head === undefined) {
+                    return;
+                } else {
+                    style = document.createElement('style');
+                    style.type = 'text/css';
+                    style.innerHTML = arguments[0].replace(/;/g, ' !important;');
+                    head.appendChild(style);
+                }
+            })
+        }
+    }, function () {
+        if (obj.Work_Check === true) {
+            if ($('textarea').length !== 0 && $('.writing-panel').length !== 0) {
+                if (arguments[0] === undefined) {
+                    $('button[class="check-duplice"]').attr('style', '');
+                    let childNode = document.createElement('div');
+                    childNode.setAttribute('class', 'writing-panel-length');
+                    childNode.innerHTML = '相似度：<span class="content-size" id ="check_repeat">0</span>%；最后检查时间：<span class="content-size" id="check_endtime">Unknown</span>【Tips：截止提交日期前再次检查，以免其他迟写的同学与自己的相似度大】';
+                    $('.writing-panel').append(childNode)
+                    arguments[0] = {
+                        'old': '',
+                        'time': (new Date()).valueOf()
+                    };
+                    arguments[0].old = $('textarea').attr('placeholder');
+                    func[arguments[1] + 1].call(window, arguments[0].old, arguments[1] + 1);
+                } else {
+                    if ((new Date()).valueOf() - arguments[0].time >= 3000 && arguments[0].old !== $('textarea').attr('placeholder')) {
+                        arguments[0].old = $('textarea').attr('placeholder');
+                        func[arguments[1] + 1].call(window, arguments[0].old, arguments[1] + 1);
+                    }
+                }
+                setTimeout(func[arguments[1]], 3000, arguments[0], arguments[1]);
+            } else if (window.location.hash.indexOf('stuWriting') !== -1) {
+                setTimeout(func[arguments[1]], 100, arguments[0], arguments[1]);
+            }
+        }
+    }, function () {
+        if (Value.userId === '' || Value.hId === '') {
+            if (window.location.hash.match(/#\/stuWriting\/([0-9]*)\/([0-9]*)(\/|)\?([\s\S]*)/i) !== null) {
+                Value.userId = window.location.hash.match(/#\/stuWriting\/([0-9]*)\/([0-9]*)(\/|)\?([\s\S]*)/i)[1];
+                Value.hId = window.location.hash.match(/#\/stuWriting\/([0-9]*)\/([0-9]*)(\/|)\?([\s\S]*)/i)[2];
+                func[arguments[1]].call(window, arguments[0], arguments[1]);
+            }
+        } else {
+            $.ajax({
+                type: 'POST',
+                url: 'https://homeworkapi.ulearning.cn/stuHomework/getDuplicate',
+                data: JSON.stringify({
+                    'content': arguments[0],
+                    'homeworkID': Value.hId,
+                    'userID': Value.userId
+                }),
+                contentType: "application/json; charset=utf-8",
+                success: function () {
+                    $('#check_repeat')[0].innerHTML = arguments[0].result;
+                    $('#check_endtime')[0].innerHTML = Date().match(/[0-9][0-9][0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]/)[0];
+                }
+            })
+        }
+    }, function () {
+        if (window.location.hash.indexOf('stuWriting') !== -1) {
+            func[arguments[0] - 2].call(window, undefined, arguments[0] - 2);
+        } else {
+            setTimeout(func[arguments[0]], 1000, arguments[0]);
+        }
+    }, function () {
+        func[arguments[0] + 5].call(window, arguments[0] + 5)
+        func[arguments[0] + 3].call(window, arguments[0] + 3);
+        $(function () {
+            func[13].call(window, null, undefined, 13);
+        });
+        func[arguments[0] + 4].call(window, arguments[0] + 4);
+    }, function () {
+        if (obj.Show_M3U8 !== true) {
+            return;
+        }
+        if (arguments[0] === null) {
+            Value.chatData = _self.chatData;
+            if (Value.chatData === undefined) {
+                return;
+            }
+            Value.isLive = Value.chatData.isLive;
+            Value.liveStatus = Value.chatData.liveStatus;
+            if (Value.isLive !== 'end' && Value.liveStatus !== 'end') {
+                return;
+            }
+            Value.channelId = Value.chatData.channelId;
+            arguments[0] = 1
+                arguments[1] = document.createElement('li');
+        }
+        var online_url = 'https://api.polyv.net/live/v2/channel/recordFile/' + Value.channelId + '/jsonp/playback-list?callback=jQuery0_1&pageSize=5&_=' + (new Date()).valueOf() + '&page=' + arguments[0];
+        if (arguments[0] === 1) {
+            arguments[1].innerHTML = '---------- M3U8文件 ----------<br />';
+        }
+        var li = arguments[1];
+        li.className = 'web-flower';
+        func[arguments[2] - 9].call(this, {
+            method: 'GET',
+            url: online_url,
+            onload: function (response) {
+                var data = response.responseText.match(/jQuery0_1\((.*)\)/);
+                if (data === null) {
                     return;
                 }
-                document.body.addEventListener('DOMSubtreeModified', check_repeat, false);
-                document.body.addEventListener( 'click', check_repeat, false );
-                document.body.addEventListener( 'keyup', check_repeat, false);
-            }
-        }
-        wait_ele()
-        function Del_Style () {
-            if ( document.querySelector( 'div[class="writing-panel"]' ) != null ) {
-                if ( $( 'button[class="check-duplice"]' ).attr( 'style' ) != undefined ) {
-                    $( 'button[class="check-duplice"]' ).removeAttr( 'style' );
+                data = JSON.parse(data[1]);
+                if (data.contents.length === 0 && data.pageNumber === 1) {
+                    return;
                 }
-                let childNode = document.createElement( 'div' );
-                childNode.setAttribute( 'class' , 'writing-panel-length' );
-                childNode.innerHTML = '相似度：<span class="content-size" id ="check_repeat">0</span>%；最后检查时间：<span class="content-size" id="check_endtime">Unknown</span>【Tips：截止提交日期前再次检查，以免其他迟写的同学与自己的相似度大】';
-                document.querySelector( 'div[class="writing-panel"]' ).appendChild( childNode );
-            }
-            else {
-                setTimeout( Del_Style , 100 );
-            }
-        }
-        Del_Style();
-        function check_repeat () {
-            if (text_ != document.querySelector('textarea').placeholder && Date.parse( new Date() ) - time_ > 2000){
-                document.body.removeEventListener('DOMSubtreeModified', check_repeat);
-                document.body.removeEventListener( 'click', check_repeat);
-                document.body.removeEventListener( 'keyup', check_repeat);
-                time_ = Date.parse( new Date() );
-                text_ = document.querySelector('textarea').placeholder;
-                $.ajax({
-                    type: 'POST',
-                    url: 'https://homeworkapi.ulearning.cn/stuHomework/getDuplicate',
-                    data: JSON.stringify(
-                        {
-                            'content': text_,
-                            'homeworkID': homeworkID,
-                            'userID': userID
-                        }
-                    ),
-                    success: function ( data ) {
-                        document.querySelector( 'span[id="check_repeat"]' ).innerText = data.result;
-                        document.querySelector( 'span[id="check_endtime"]' ).innerText = Date().match(/[0-9][0-9][0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]/)[0];
-                        document.body.addEventListener('DOMSubtreeModified', check_repeat, false);
-                        document.body.addEventListener( 'click', check_repeat, false );
-                        document.body.addEventListener( 'keyup', check_repeat, false);
-                    },
-                    error: function (xhr) {
-                        document.body.addEventListener('DOMSubtreeModified', check_repeat, false);
-                        document.body.addEventListener( 'click', check_repeat, false );
-                        document.body.addEventListener( 'keyup', check_repeat, false);
-                    },
-                    contentType: "application/json; charset=utf-8"
-                })
-            }
-        }
-    }
-    else if ( window.location.href.indexOf( 'umooc/user/login.do' ) != -1 ) {
-        window.location.href = 'https://www.ulearning.cn/ulearning/index.html#/index/portal';
-    }
-    else if ( window.location.href.indexOf( 'www.ulearning.cn/ulearning/index.html' ) != -1 || window.location.href.indexOf( 'ulearning.cn/organization/index.html' ) != -1 ) {
-        if (auto_login == 1)
-        {
-            let auto_login = function () {
-                if ( $( '[class="user-menu-component"]' ).length != 0 ) {
-                    if ( $( '[data-bind="click: login, text: publicI18nText.signin"]' ).length != 0 ) {
-                        $( '[data-bind="click: login, text: publicI18nText.signin"]' ).click();
-                        gm_get( 'username' ).then( ( username ) => {
-                            gm_get( 'password' ).then( ( password ) => {
-                                if ( username === undefined || password === undefined || username === '' || password === '' || username === null || password === null ) {
-                                    let click_bind = function () {
-                                        if ( $( '[class="modal modal-up in"]' ).length != 0 ) {
-                                            $( 'button[class="button button-red-solid btn-confirm"]' )[0].innerHTML = '自动登录';
-                                            $( '#loginForm .btn-confirm' ).bind( 'click' , function () {
-                                                gm_set( 'username' , $( 'input[id="userLoginName"]' )[0].value );
-                                                gm_set( 'password' , $( 'input[id="userPassword"]' )[0].value );
-                                            } )
-                                        }
-                                        else
-                                        {
-                                            setTimeout( click_bind , 20 );
-                                        }
-                                    }
-                                    click_bind();
-                                }
-                                else {
-                                    let login = function () {
-                                        if ( $( '[class="modal modal-up in"]' ).length != 0 ) {
-                                            $( 'input[id="userLoginName"]' )[0].value = username;
-                                            $( 'input[id="userPassword"]' )[0].value = password;
-                                            $( 'button[class="button button-red-solid btn-confirm"]' )[0].click();
-                                        }
-                                        else {
-                                            setTimeout( login , 20 );
-                                        }
-                                    }
-                                    login();
-                                }
-                            } )
-                        } );
-                    }
-                    else {
-                        gm_get( 'username' ).then( ( username ) => {
-                            if ( username === undefined || username === null || username === '' ) {
-                                ;
-                            }
-                            else {
-                                $( '[data-bind="click: logout, text: publicI18nText.signout"]' )[0].innerText = '重新登录';
-                                $( '[class="user-control-menu"]' ).append('<a class="user-menu-item" id="relogin">重置登录信息</a>');
-                                $("[id='relogin']").bind( 'click' , function () {
-                                    gm_del( 'username' );
-                                    gm_del( 'password' );
-                                    alert("重置成功");
-                                    $('[data-bind="click: logout, text: publicI18nText.signout"]')[0].click();
-                                } )
-                            }
-                        });
-                    }
+                for (let a = 0; a < data.contents.length; a++) {
+                    li.innerHTML += '<a style="color: white" href="' +
+                    data.contents[a].url + '">点击下载 M3U8 文件：' + data.contents[a].title + '</a><br />';
                 }
-                else {
-                    setTimeout( auto_login , 20 );
+                if (data.totalItems > data.pageNumber * data.pageSize) {
+                    func[13].call(window, data.pageNumber + 1, li, 13);
+                } else {
+                    li.innerHTML += '---------- END ----------<br />'
+                    $('ul[class="ppt-chat-list"]').append(li);
+                    var ele = document.querySelector('#pptMessage');
+                    ele.scrollTop = ele.scrollHeight;
                 }
-            }
-            auto_login();
-        }
-    }
-    else if ( window.location.href.indexOf("www.tongshike.cn/ulearning_web/login.do") != -1 ) {
-        window.location.href = 'https://www.ulearning.cn/ulearning/index.html#/index/portal';
-    }
-    else if ( window.location.href.indexOf('ulearning/tip/timeout.html') != -1) {
-        window.location.href = 'https://www.ulearning.cn/umooc/home/logout.do'
-    }
-    else if (window.location.href.indexOf('learnCourse/learnCourse.html') != -1) {
-        unsafeWindow.localStorage.removeItem('failureRecord');
-        if (unsafeWindow.navigator.__defineGetter__) {
-            unsafeWindow.navigator.__defineGetter__("userAgent", function () {
-                return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36";
-            });
-        } else if (Object.defineProperty) {
-            Object.defineProperty(unsafeWindow.navigator, "userAgent", {
-                get: function () {
-                    return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36";
-                }
-            });
-        }
-    }
-    else if (window.location.href.indexOf('courseweb.ulearning.cn/ulearning/index.html') != -1){
-        if (hash_find('course/resource') != -1) {
-            Add_Download_Button('0', ['0']);
-            window.addEventListener('hashchange', listen_hash_true, false);
-        } else {
-            window.addEventListener('hashchange', listen_hash_false, false);
-        }
-        function listen_hash_false() {
-            if (hash_find('course/resource') != -1) {
-                window.addEventListener('hashchange', listen_hash_true, false);
-                window.removeEventListener('hashchange', listen_hash_false, false);
-                Add_Download_Button('0', ['0']);
-            }
-        }
-        function listen_hash_true() {
-            if (hash_find('course/resource') == -1) {
-                window.addEventListener('hashchange', listen_hash_false, false);
-                window.removeEventListener('hashchange', listen_hash_true, false);
-            }
-        }
-        function Add_Download_Button(parentId, old_parentId) {
-            var ocid = window.location.hash.match(/courseId=[\d\D]*/i)[0].replace('courseId=', '');
-            var Authorization = getCookie('AUTHORIZATION');
-            if ($('style[id="add_download_button"]').length == 0) {
-                var style = document.createElement('style');
-                style.type = 'text/css';
-                style.id = 'add_download_button';
-                style.innerHTML = '.red-dot {display: none!important;} '
-                    + '.course-resource-page.student-model .table-groups .table-body .title {max-width: 310px!important;} '
-                    + '.course-resource-page.student-model .table-groups .resource-title {width: 388px!important;}'
-                    + '.course-resource-page .table-resource .resource-operate {width: 170px!important;padding: 0!important;}';
-                document.getElementsByTagName('head').item(0).appendChild(style);
-            }
-            if (ocid != null) {
-                if (Authorization != '') {
-                    $.ajax({
-                        url: 'https://courseapi.ulearning.cn/course/student/content?ocId=' + ocid + '&parentId=' + parentId + '&keyword=&pn=1&ps=10&version=2',
-                        type: 'GET',
-                        beforeSend: function (xhr) {
-                            xhr.setRequestHeader('Authorization', Authorization)
-                        },
-                        success: function (result, status, xhr) {
-                            if (result.list != null || result.list.length != 0) {
-                                Ajax(parentId, old_parentId);
-                            }
-                        },
-                        error: function (xhr, status, error) { ;
-                                                             }
-                    })
-                }
-            }
-        }
-        function Ajax(parentId, old_parentId) {
-            var Page = '0';
-            Add_Data();
-            function Add_Data() {
-                var ocid = window.location.hash.match(/courseId=[\d\D]*/i)[0].replace('courseId=', '');
-                var Authorization = getCookie('AUTHORIZATION');
-                if (hash_find('course/resource') != -1) {
-                    if ($('div[class="pagination-wrap pagination-resource-list"] span[class="active"]').length == 1) {
-                        $('div[class="pagination-wrap pagination-resource-list"]').off();
-                        $('div[class="pagination-wrap pagination-resource-list"]').on('click', function(){
-                            if($('div[class="pagination-wrap pagination-resource-list"] span[class="active"]')[0].innerText != Page){
-                                Ajax(parentId, old_parentId);
-                            }
-                            else{
-                                setTimeout(function(){
-                                    Ajax(parentId, old_parentId);
-                                },500)
-                            }
-                        });
-                        if ($('div[class="pagination-wrap pagination-resource-list"] span[class="active"]')[0].innerText != Page) {
-                            if ($('span[class="breadcrumb-back"]').length != 0){
-                                $('span[class="breadcrumb-back"]').off();
-                                $('span[class="breadcrumb-back"]').on('click',function(){
-                                    old_parentId.pop();
-                                    Add_Download_Button(old_parentId[old_parentId.length - 1], old_parentId);
-                                })
-                            }
-                            $('a[class="breadcrumb-step"]').on('click',function(){
-                                Add_Download_Button('0', ['0']);
-                            })
-                            Page = $('div[class="pagination-wrap pagination-resource-list"] span[class="active"]')[0].innerText;
-                            $.ajax({
-                                url: 'https://courseapi.ulearning.cn/course/student/content?ocId=' + ocid + '&parentId=' + parentId + '&keyword=&pn=' + Page + '&ps=10&version=2',
-                                type: 'GET',
-                                beforeSend: function (xhr) {
-                                    xhr.setRequestHeader('Authorization', Authorization)
-                                },
-                                success: function (result, status, xhr) {
-                                    if (result.list != null || result.list.length != 0) {
-                                        if (result.list.length == $('li[class="tr clearfix"]').length) {
-                                            $(result.list).each(function(index, value){
-                                                if (result.list[index]['location'] != null && $('button[id="add_download_button"]', $('li[class="tr clearfix"]')[index]).length == 0){
-                                                    $('<button id="add_download_button" class="button button-resource-view button-red-hollow" onclick="javascript: window.open(\'' + 'https://leicloud.ulearning.cn/' + result.list[index]['location'] + '?attname=' + result.list[index]['title'] + '\')">下载</button>').prependTo($('li[class="tr clearfix"] div[class="td resource-operate"]')[index])
-                                                }
-                                                else if (result.list[index]['type'] == 0 && $('li[class="tr clearfix"] span[class="title"]')[index].id == ''){
-                                                    $('li[class="tr clearfix"] span[class="title"]')[index].id = result.list[index]['id'];
-                                                    $('li[class="tr clearfix"] span[class="title"]')[index].addEventListener('click', function(){
-                                                        old_parentId.push(parentId);
-                                                        Add_Download_Button($('li[class="tr clearfix"] span[class="title"]')[index].id, old_parentId);
-                                                    }, false);
-                                                }
-                                                else if (result.list[index]['type'] == 8 && result.list[index]['location'] == null && $('button[id="add_download_button"]', $('li[class="tr clearfix"]')[index]).length == 0){
-                                                    $('<button id="add_download_button" class="button button-resource-view button-red-hollow" onclick="javascript: alert(\'该资源无法获取到下载地址，请手动查看、下载\')" title="该资源无法获取到下载地址，请手动查看、下载">无法下载</button>').prependTo($('li[class="tr clearfix"] div[class="td resource-operate"]')[index]);
-                                                }
-                                            })
-                                        } else {
-                                            setTimeout(function(){
-                                                Ajax(parentId, old_parentId);
-                                            }, 10);
-                                        }
-                                    }
-                                },
-                                error: function (xhr, status, error) { ;
-                                                                     }
-                            })
-                        }
-                    } else {
-                        setTimeout(Add_Data, 10);
-                    }
-                }
-            }
-        }
-    }
-    else if (window.location.href.indexOf('live.polyv.cn/watch/') != -1){
-        $().ready(function(){
-            unsafeWindow.fetch_ = unsafeWindow.fetch;
-            unsafeWindow.fetch = function(url ,data){
-                if(url.indexOf('pull-c1.videocc.net') != -1){
-                    unsafeWindow.live_url=url;
-                    let li = document.createElement('li');
-                    li.innerHTML = '------------------------------<br />';
-                    li.className = 'web-flower';
-                    li.innerHTML += '<a style="color: white" target="_blank" href="' + url + '">直播流地址【右键复制链接地址】</a><br />'
-                    li.innerHTML += '------------------------------<br />'
-                    document.querySelector('ul[class="ppt-chat-list"]').appendChild(li);
-                }
-                return unsafeWindow.fetch_(url, data);
-            }
-            unsafeWindow.setItem_ = unsafeWindow.sessionStorage.setItem;
-            unsafeWindow.sessionStorage.setItem = function(a,b){
-                if(a=='errorCode'){
-                    if(unsafeWindow.live_url != undefined && unsafeWindow.live_url != ''){
-                        let li = document.createElement('li');
-                        li.style="color: yellow";
-                        li.className = 'web-flower';
-                        li.innerHTML = '------------------------------<br />';
-                        li.innerHTML += '检测到直播可能错误<br /><font color="red">插件可能影响直播（如IDM插件），可禁用全部插件后，一个一个开启插件，刷新页面测试</font><br />可使用直播流地址变相拯救：<a style="color: white" target="_blank" href="' + unsafeWindow.live_url + '">直播链接</a><br />或者尝试使用手机端观看直播<br />';
-                        // li.innerHTML += '拯救方法：<a style="color: white" target="_blank" href="#">点击查看</a><br />'
-                        li.innerHTML += '------------------------------<br />'
-                        document.querySelector('ul[class="ppt-chat-list"]').appendChild(li);
-                    }
-                }
-                return unsafeWindow.setItem_(a,b);
-            }
-            if(unsafeWindow.sessionStorage.getItem('errorCode') != ""){
-                unsafeWindow.sessionStorage.clear();
-            }
-            var chatData = unsafeWindow.chatData;
-            var isLive = chatData.isLive,
-                liveStatus = chatData.liveStatus;
-            var channelId = chatData.channelId;
-            var url = 'https://api.polyv.net/live/v2/channel/recordFile/' + channelId +'/jsonp/playback-list?callback=jQuery0_1&pageSize=5&_=' + (new Date()).valueOf() + '&page=';
-            if(chatData === undefined){return;}
-            if(isLive != 'end' && liveStatus != 'end'){return;}
-            get_download_url();
-            function get_download_url(page, li){
-                page = page || 1
-                let first = true;
-                if(li != undefined){first=false}
-                li = li || document.createElement('li');
-                if(first==true){li.innerHTML = '------------------------------<br />'}
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url: url + page,
-                    onload: function(response){
-                        var data = response.responseText.match(/jQuery0_1\((.*)\)/);
-                        if(data===null){return}
-                        data = JSON.parse(data[1])
-                        li.className = 'web-flower';
-                        for(let a=0; a<data.contents.length; a++){
-                            li.innerHTML += '<a style="color: white" href="' +
-                                data.contents[a].url + '">点击下载 M3U8 文件：' + data.contents[a].title + '</a>' +
-                                '<br />';
-                        }
-                        if(data.totalItems > data.pageNumber * data.pageSize){
-                            get_download_url(data.pageNumber + 1, li);
-                        }
-                        else{
-                            li.innerHTML += '------------------------------<br />'
-                            document.querySelector('ul[class="ppt-chat-list"]').appendChild(li);
-                            let ele = document.querySelector('#pptMessage');
-                            ele.scrollTop = ele.scrollHeight;
-                        }
-                    }
-                })
             }
         })
-    }
-
-    // getCookie & setCookie 源自优学院网站源代码
-    function getCookie(c_name) {
-        if (document.cookie.length > 0) {
-            var c_start = document.cookie.indexOf(c_name + "=");
-            if (c_start != -1) {
-                c_start = c_start + c_name.length + 1;
-                var c_end = document.cookie.indexOf(";", c_start);
-                if (c_end == -1) c_end = document.cookie.length;
-                return unescape(
-                    document.cookie
-                    .substring(c_start, c_end)
-                    .replace(/(%[0-9A-Z]{2})+/g, decodeURIComponent)
-                );
+    }, function () {
+        if ($('span[class="btn-signed"]').length !== 0) {
+            var a = $('span[class="btn-signed"]')[0].getBoundingClientRect();
+            var clientX = (a.right + a.left) / 2;
+            var clientY = (a.bottom + a.top) / 2;
+            var ev = document.createEvent('MouseEvents');
+            ev.initMouseEvent('click', true, true, unsafeWindow, 1, clientX, clientY + 100, clientX, clientY, false, false, false, false, 0, null);
+            $('span[class="btn-signed"]')[0].dispatchEvent(ev);
+        }
+    }, function () {
+        Value.setItem = _self.sessionStorage.setItem;
+        _self.sessionStorage.setItem = function () {
+            if (arguments[0] === 'errorCode') {
+                var li = document.createElement('li');
+                li.style = "color: yellow";
+                li.className = 'web-flower';
+                li.innerHTML = '------------------------------<br />';
+                if (Value.live_url !== '' && obj.Show_Live === true) {
+                    li.innerHTML += '检测到直播可能错误<br /><font color="red">插件可能影响直播（如IDM插件），可禁用全部插件后，一个一个开启插件，刷新页面测试</font><br />可使用直播流地址变相拯救：<a style="color: white" target="_blank" href="' + Value.live_url + '">直播链接</a><br />或者尝试使用手机端观看直播<br />';
+                    li.innerHTML += '------------------------------<br />';
+                } else {
+                    li.innerHTML += '检测到直播可能错误<br /><font color="red">插件可能影响直播（如IDM插件），可禁用全部插件后，一个一个开启插件，刷新页面测试</font><br />可尝试使用手机端观看<br />';
+                    li.innerHTML += '------------------------------<br />';
+                }
+                $('ul[class="ppt-chat-list"]').append(li);
+                var ele = document.querySelector('#pptMessage');
+                ele.scrollTop = ele.scrollHeight;
+                return;
+            } else {
+                return Value.setItem.apply(_self, arguments);
             }
         }
-        return "";
-    }
-    function setCookie(c_name, value, expiredays, path, domain) {
-        var exdate = new Date();
-        exdate.setDate(exdate.getDate() + expiredays);
-        document.cookie =
-            c_name +
-            "=" +
-            escape(value) +
-            (expiredays == null ? "" : "; expires=" + exdate.toGMTString()) +
-            (path == null ? "" : "; path=" + escape(path)) +
-            (domain == null ? "" : "; domain=" + escape(domain));
-    }
-    function hash_find(a) {
-        return window.location.hash.indexOf(a)
-    }
-    function gm_get( name , defaultValue ) {
-        if ( typeof GM_getValue === 'function' ) {
-            return new Promise ( ( resolve , reject ) => {
-                resolve( GM_getValue( name , defaultValue ) );
-            } )
+        if (_self.sessionStorage.getItem('errorCode') !== '') {
+            _self.sessionStorage.clear();
         }
-        else {
-            return GM.getValue( name , defaultValue );
+    }, function () {
+        if (obj.Live_Sign === true) {
+            if ($('div[class="player-signed"]').length !== 0) {
+                var ele = $('div[class="player-signed"]')[0];
+                var observerOptions = {
+                    attributes: true
+                }
+                var observer = new MutationObserver(func[arguments[0] - 2]);
+                observer.observe(ele, observerOptions);
+                func[arguments[0] - 2].call(window);
+            } else {
+                setTimeout(func[arguments[0]], 1000, arguments[0]);
+            }
         }
-    }
-    function gm_set( name , defaultValue ) {
-        if ( typeof GM_setValue === 'function' ) {
-            GM_setValue( name , defaultValue );
+    }, function () {
+        _self.fetch_ = _self.fetch;
+        _self.fetch = function () {
+            if (arguments[0].indexOf('pull-c1.videocc.net') !== -1) {
+                Value.live_url = arguments[0];
+                var li = document.createElement('li');
+                li.innerHTML = '---------- 直播流地址 ----------<br />';
+                li.className = 'web-flower';
+                li.innerHTML += '<a style="color: white" target="_blank" href="' + arguments[0] + '">直播流地址【右键复制链接地址】</a><br />';
+                li.innerHTML += '---------- END ----------<br />';
+                $('ul[class="ppt-chat-list"]').append(li);
+                var ele = document.querySelector('#pptMessage');
+                ele.scrollTop = ele.scrollHeight;
+            }
+            return _self.fetch_.apply(_self, arguments);
         }
-        else {
-            GM.setValue( name ,defaultValue );
-        }
-    }
-    function gm_del( name ) {
-        if ( typeof GM_deleteValue === 'function' ) {
-            GM_deleteValue( name );
-        }
-        else {
-            GM.deleteValue( name );
-        }
-    }
-    function gm_xml( obj ){
-        if ( typeof GM_xmlhttpRequest === 'function') {
-            GM_xmlhttpRequest(obj);
-        }
-        else{
-            GM.xmlHttpRequest(obj);
+    }, function () {
+        if (obj.Browser_Compatible === true) {
+            if (_self.navigator.__defineGetter__) {
+                _self.navigator.__defineGetter__("userAgent", function () {
+                    return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36";
+                });
+            } else if (_self.Object.defineProperty) {
+                _self.Object.defineProperty(_self.navigator, "userAgent", {
+                    get: function () {
+                        return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36";
+                    }
+                });
+            }
         }
     }
-})();
+]
+if (window.location.href.indexOf('www.ulearning.cn/ulearning/index.html') !== -1) {
+    func[6].call(window, undefined, 6)
+} else if (window.location.href.search(/(umooc\/user\/login\.do|courseweb\.ulearning\.cn)/i) != -1 && window.location.href.indexOf('ua.ulearning.cn') === -1) {
+    func[7].call(window, undefined, 7)
+} else if (window.location.href.indexOf('homework.ulearning.cn') !== -1) {
+    func[11].call(window, 11);
+} else if (window.location.href.indexOf('live.polyv.cn/watch/') !== -1) {
+    func[12].call(window, 12);
+} else if (window.location.href.indexOf('ua.ulearning.cn') !== -1) {
+    func[18].call(window, 18);
+}
