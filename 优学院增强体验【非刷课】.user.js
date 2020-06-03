@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         优学院增强体验脚本
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.06.02
-// @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除Edge兼容性、直播间自动签到
+// @version      2020.06.03
+// @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除Edge兼容性、直播间自动签到、资源增加下载按钮
 // @author       Brush-JIM
 // @match        *.tongshike.cn/*
 // @match        *.ulearning.cn/*
@@ -37,6 +37,7 @@ var obj = {
     , Show_Live: true // true: 显示直播流链接，false: 禁用显示
     , Browser_Compatible: false // true: 启用浏览器兼容，false: 禁用浏览器兼容。正常的浏览器无需开启，开启也不会有影响，主要用于Edge浏览器
     , Live_Sign: false // true: 启用直播间自动签到，false: 禁用直播间签到
+    , Add_Button: true // true: 启用增加下载按钮，false: 禁用增加按钮；注意！点击“下载”则同时使资源更改为已读状态
 }
 var Value = {
     userId: '',
@@ -383,16 +384,104 @@ var func = [function () {
                 });
             }
         }
+    }, function () {
+        if (typeof _self.XMLHttpRequest.prototype.open_ !== 'function') {
+            _self.XMLHttpRequest.prototype.open_ = _self.XMLHttpRequest.prototype.open;
+        }
+        if (_self.XMLHttpRequest.prototype.change !== true) {
+            _self.XMLHttpRequest.prototype.change = true;
+            _self.XMLHttpRequest.prototype.open = function () {
+                this.addEventListener("readystatechange", () => {
+                    if (this.readyState >= 4) {
+                        try {
+                            setTimeout(func[22], 100, JSON.parse(this.responseText), 0, 22);
+                        } catch (e) {}
+                    }
+                }, false);
+                _self.XMLHttpRequest.prototype.open_.apply(this, arguments);
+            }
+        }
+    }, function () {
+        if (typeof _self.XMLHttpRequest.prototype.open_ === 'function') {
+            _self.XMLHttpRequest.prototype.change = false;
+            _self.XMLHttpRequest.prototype.open = _self.XMLHttpRequest.prototype.open_;
+        }
+    }, function () {
+        if (obj.Add_Button !== true) {
+            return;
+        }
+        func[arguments[0] - 13].call(window, '.course-resource-page.student-model .table-groups .table-body .title {max-width: 310px;}', arguments[0] - 13);
+        func[arguments[0] - 13].call(window, '.course-resource-page.student-model .table-groups .resource-title {width: 388px;}', arguments[0] - 13);
+        func[arguments[0] - 13].call(window, '.course-resource-page .table-resource .resource-operate {width: 170px;padding: 0;}', arguments[0] - 13);
+        if (window.location.hash.indexOf('course/resource') !== -1) {
+            func[arguments[0] - 2].call(window, arguments[0] - 2);
+        }
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash.indexOf('course/resource') !== -1) {
+                if (_self.XMLHttpRequest.prototype.change !== true) {
+                    func[19].call(window, 19)
+                }
+            } else {
+                func[20].call(window, 20)
+            }
+        }, false);
+    }, function () {
+        if (arguments[0].list === undefined) {
+            return;
+        }
+        if ($('li[class="tr clearfix"]').length === arguments[0].list.length) {
+            $(arguments[0].list).each(function () {
+                if (arguments[1].location !== null && arguments[1].location !== undefined && arguments[1].location !== '') {
+                    $('#download', $('div[class="td resource-operate"]', $('li[class="tr clearfix"]')[arguments[0]]).append('<button id="download" class="button button-resource-view button-red-hollow" data-location="' + arguments[1].location + '" data-title="' + arguments[1].title + '" data-id="' + arguments[1].id + '">下载</button>')).on('click', func[23]);
+                }
+            })
+        } else if (arguments[1] <= 3) {
+            setTimeout(func[arguments[2]], 500, arguments[0], arguments[1] + 1, arguments[2]);
+        }
+    }, function () {
+        console.log(this);
+        var a = $(this).attr('data-id');
+        var b = $(this).attr('data-title');
+        var c = $(this).attr('data-location');
+        $.ajax({
+            url: 'https://courseapi.ulearning.cn/course/content/' + a,
+            type: 'GET',
+            beforeSend: function (request) {
+                request.setRequestHeader('Authorization', _self.Authorization);
+                request.setRequestHeader('Content-Type', 'application/json');
+            },
+            success: function (response) {
+                if (response.type !== undefined) {
+                    $.ajax({
+                        url: 'https://courseapi.ulearning.cn/course/content/views/' + a + '?type=' + response.type,
+                        type: 'PUT',
+                        beforeSend: function (request) {
+                            request.setRequestHeader('Authorization', _self.Authorization);
+                            request.setRequestHeader('Content-Type', 'application/json');
+                        }
+                    })
+                }
+            }
+        })
+        if ($(this).prev().length !== 0) {
+            $($(this).prev()[0]).attr('class', 'button button-resource-view button-red-hollow');
+        }
+        window.open('https://leicloud.ulearning.cn/' + c + '?attname=' + b);
     }
 ]
 if (window.location.href.indexOf('www.ulearning.cn/ulearning/index.html') !== -1) {
     func[6].call(window, undefined, 6)
-} else if (window.location.href.search(/(umooc\/user\/login\.do|courseweb\.ulearning\.cn)/i) != -1 && window.location.href.indexOf('ua.ulearning.cn') === -1) {
-    func[7].call(window, undefined, 7)
-} else if (window.location.href.indexOf('homework.ulearning.cn') !== -1) {
+}
+if (window.location.href.search(/(umooc\/user\/login\.do|courseweb\.ulearning\.cn)/i) != -1 && window.location.href.indexOf('ua.ulearning.cn') === -1) {
+    func[7].call(window, undefined, 7);
+    func[21].call(window, 21);
+}
+if (window.location.href.indexOf('homework.ulearning.cn') !== -1) {
     func[11].call(window, 11);
-} else if (window.location.href.indexOf('live.polyv.cn/watch/') !== -1) {
+}
+if (window.location.href.indexOf('live.polyv.cn/watch/') !== -1) {
     func[12].call(window, 12);
-} else if (window.location.href.indexOf('ua.ulearning.cn') !== -1) {
+}
+if (window.location.href.indexOf('ua.ulearning.cn') !== -1) {
     func[18].call(window, 18);
 }
