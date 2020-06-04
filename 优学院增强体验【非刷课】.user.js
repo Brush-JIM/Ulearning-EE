@@ -1,10 +1,9 @@
 // ==UserScript==
-// @name         优学院增强体验脚本
+// @name         优学院增强脚本
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.06.03
+// @version      2020.06.04
 // @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除Edge兼容性、直播间自动签到、资源增加下载按钮
 // @author       Brush-JIM
-// @match        *.tongshike.cn/*
 // @match        *.ulearning.cn/*
 // @match        *://live.polyv.cn/watch/*
 // @grant        unsafeWindow
@@ -255,6 +254,9 @@ var func = [function () {
             func[13].call(window, null, undefined, 13);
         });
         func[arguments[0] + 4].call(window, arguments[0] + 4);
+        $(function () {
+            func[24].call(window, 24);
+        })
     }, function () {
         if (obj.Show_M3U8 !== true) {
             return;
@@ -467,6 +469,19 @@ var func = [function () {
             $($(this).prev()[0]).attr('class', 'button button-resource-view button-red-hollow');
         }
         window.open('https://leicloud.ulearning.cn/' + c + '?attname=' + b);
+    }, function () {
+        if (document.querySelector('#pptMessage') === null) {
+            setTimeout(func[arguments[0]], 100, arguments[0]);
+            return;
+        }
+        var li = document.createElement('li');
+        li.innerHTML = '---------- 脚本设置 ----------<br />';
+        li.className = 'web-flower';
+        li.innerHTML += '是否显示M3U8：' + obj.Show_M3U8 + '<br />是否显示流地址：' + obj.Show_Live + '<br />是否自动签到：' + obj.Live_Sign + '<br />';
+        li.innerHTML += '---------- END ----------<br />';
+        $('ul[class="ppt-chat-list"]').append(li);
+        var ele = document.querySelector('#pptMessage');
+        ele.scrollTop = ele.scrollHeight;
     }
 ]
 if (window.location.href.indexOf('www.ulearning.cn/ulearning/index.html') !== -1) {
