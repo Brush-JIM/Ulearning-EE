@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         优学院增强脚本
+// @name         优学院增强
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.06.05
-// @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除Edge兼容性、直播间自动签到、资源增加下载按钮
+// @version      2020.06.06
+// @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除浏览器兼容性、直播间自动签到、资源页增加下载按钮、课件内资源增加下载地址
 // @author       Brush-JIM
 // @match        *.ulearning.cn/*
 // @match        *://live.polyv.cn/watch/*
@@ -38,6 +38,7 @@ var obj = {
     , Browser_Compatible: false // true: 启用浏览器兼容，false: 禁用浏览器兼容。正常的浏览器无需开启，开启也不会有影响，主要用于Edge浏览器
     , Live_Sign: false // true: 启用直播间自动签到，false: 禁用直播间签到
     , Add_Button: true // true: 启用增加下载按钮，false: 禁用增加按钮；注意！点击“下载”则同时使资源更改为已读状态
+    , Class_Url: true // true: 显示课程内资源的下载地址【如文档、视频】，false: 禁用显示
 }
 var Value = {
     userId: '',
@@ -483,6 +484,60 @@ var func = [function () {
         $('ul[class="ppt-chat-list"]').append(li);
         var ele = document.querySelector('#pptMessage');
         ele.scrollTop = ele.scrollHeight;
+    }, function () {
+        if (obj.Class_Url === true) {
+            var ele = $('body')[0];
+            var observerOptions = {
+                childList: true,
+                attributes: true,
+                subtree: true
+            }
+            var observer = new MutationObserver(func[arguments[0] + 3]);
+            observer.observe(ele, observerOptions);
+        }
+    }, function () {
+        $('.video-element').each(function () {
+            if ($('#video-url', arguments[1]).length !== 0) {
+                return;
+            }
+            var c = $('.file-media', arguments[1]).attr('data-playerarg');
+            if (c === undefined) {
+                return;
+            }
+            try {
+                var d = JSON.parse(decodeURIComponent(c))
+                    if (d.file !== undefined && d.file !== '' && d.file !== null) {
+                        $('.mejs__controls', arguments[1]).prepend('<div class="mejs__time mejs__currenttime-container"><a id="video-url" target="_blank" href="https://leicloud.ulearning.cn/' + d.file + '" style="color: red">->>视频下载<<-</a></div>');
+                    }
+            } catch (e) {}
+        })
+    }, function () {
+        $('.page-element').each(function () {
+            if ($('#file-url', arguments[1]).length !== 0) {
+                return;
+            }
+            var c = $('.file-doc', arguments[1]).attr('data-file');
+            if (c === undefined || c === '') {
+                return;
+            }
+            var d = ''
+                if (c.slice(c.length - 4) === '.swf') {
+                    d = '<div class="view-btn" style="text-align: center;"><a id="file-url" target="_blank" href="https://leicloud.ulearning.cn/' + c + '" style="color: red">↳swf文档下载↲</a>';
+                    var e = $('.doc-name', arguments[1]).text().lastIndexOf('.');
+                    if (e !== -1) {
+                        d += '&nbsp;&nbsp;&nbsp;<a id="file-url" target="_blank" href="https://leicloud.ulearning.cn/' + c.slice(0, c.length - 4) + $('.doc-name', arguments[1]).text().slice(e) + '" style="color: red">↳' + $('.doc-name', arguments[1]).text().slice(e + 1) + '文档下载【可能有效】↲</a>'
+                    }
+                    d += '</div>'
+                } else {
+                    d = '<div class="view-btn" style="text-align: center;"><a id="file-url" target="_blank" href="https://leicloud.ulearning.cn/' + c + '" style="color: red">↳文档下载↲</a></div>';
+                }
+                $('.doc-card', arguments[1]).after(d)
+        })
+    }, function () {
+        arguments[1].disconnect();
+        func[26].call(window, 26);
+        func[27].call(window, 27);
+        func[25].call(window, 25);
     }
 ]
 if (window.location.href.indexOf('www.ulearning.cn/ulearning/index.html') !== -1) {
@@ -500,4 +555,5 @@ if (window.location.href.indexOf('live.polyv.cn/watch/') !== -1) {
 }
 if (window.location.href.indexOf('ua.ulearning.cn') !== -1) {
     func[18].call(window, 18);
+    func[25].call(window, 25);
 }
