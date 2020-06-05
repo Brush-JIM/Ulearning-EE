@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         优学院增强脚本
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.06.04
+// @version      2020.06.05
 // @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除Edge兼容性、直播间自动签到、资源增加下载按钮
 // @author       Brush-JIM
 // @match        *.ulearning.cn/*
@@ -22,6 +22,7 @@
 // @icon         https://www.ulearning.cn/ulearning/favicon.ico
 // @supportURL   https://greasyfork.org/zh-CN/scripts/383596
 // @webRequest   [{"selector":"https://hm.baidu.com/*","action":"cancel"}]
+// @compatible   Chrome
 // ==/UserScript==
 
 var obj = {
