@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         优学院增强
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.06.06
-// @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除浏览器兼容性、直播间自动签到、资源页增加下载按钮、课件内资源增加下载地址
+// @version      2020.06.07
+// @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除浏览器兼容、直播间自动签到、资源页增加下载按钮、课件内资源增加下载地址
 // @author       Brush-JIM
 // @match        *.ulearning.cn/*
 // @match        *://live.polyv.cn/watch/*
@@ -53,7 +53,6 @@ var Value = {
 }
 var _self = unsafeWindow;
 var $ = window.jQuery;
-_self.jQuery_ = $;
 var func = [function () {
         var cookie = _self.document.cookie
             if (cookie.length > 0) {
@@ -507,7 +506,11 @@ var func = [function () {
             try {
                 var d = JSON.parse(decodeURIComponent(c))
                     if (d.file !== undefined && d.file !== '' && d.file !== null) {
-                        $('.mejs__controls', arguments[1]).prepend('<div class="mejs__time mejs__currenttime-container"><a id="video-url" target="_blank" href="https://leicloud.ulearning.cn/' + d.file + '" style="color: red">->>视频下载<<-</a></div>');
+                        var e = '';
+                        if (d.file.match(/(.*)\.(.*)/) !== null && $('.course-title').text() !== '') {
+                            e += '?attname=' + $('.course-title').text() + '.' + d.file.match(/(.*)\.(.*)/)[2];
+                        }
+                        $('.mejs__controls', arguments[1]).prepend('<div class="mejs__time mejs__currenttime-container"><a id="video-url" target="_blank" href="https://leicloud.ulearning.cn/' + d.file + e + '" style="color: red">->>视频下载<<-</a></div>');
                     }
             } catch (e) {}
         })
@@ -520,18 +523,27 @@ var func = [function () {
             if (c === undefined || c === '') {
                 return;
             }
-            var d = ''
-                if (c.slice(c.length - 4) === '.swf') {
-                    d = '<div class="view-btn" style="text-align: center;"><a id="file-url" target="_blank" href="https://leicloud.ulearning.cn/' + c + '" style="color: red">↳swf文档下载↲</a>';
-                    var e = $('.doc-name', arguments[1]).text().lastIndexOf('.');
-                    if (e !== -1) {
-                        d += '&nbsp;&nbsp;&nbsp;<a id="file-url" target="_blank" href="https://leicloud.ulearning.cn/' + c.slice(0, c.length - 4) + $('.doc-name', arguments[1]).text().slice(e) + '" style="color: red">↳' + $('.doc-name', arguments[1]).text().slice(e + 1) + '文档下载【可能有效】↲</a>'
-                    }
-                    d += '</div>'
+            var d = '',
+            e = '',
+            f = '',
+            g = '';
+            if ($('.doc-name', arguments[1]).text().match(/(.*)\.(.*)/) !== null) {
+                e = $('.doc-name', arguments[1]).text().match(/(.*)\.(.*)/)[1];
+                f = $('.doc-name', arguments[1]).text().match(/(.*)\.(.*)/)[2];
+                g = '?attname=' + e + '.' + f;
+            }
+            if (c.slice(c.length - 4) === '.swf') {
+                if (e !== '' && f !== '') {
+                    d = '<div class="view-btn" style="text-align: center;"><a id="file-url" target="_blank" href="https://leicloud.ulearning.cn/' + c + '?attname=' + e + '.swf" style="color: red">↳swf文档下载↲</a>';
+                    d += '&nbsp;&nbsp;&nbsp;<a id="file-url" target="_blank" href="https://leicloud.ulearning.cn/' + c.slice(0, c.length - 4) + '.' + f + g + '" style="color: red">↳' + f + '文档下载【可能有效】↲</a>';
                 } else {
-                    d = '<div class="view-btn" style="text-align: center;"><a id="file-url" target="_blank" href="https://leicloud.ulearning.cn/' + c + '" style="color: red">↳文档下载↲</a></div>';
+                    d = '<div class="view-btn" style="text-align: center;"><a id="file-url" target="_blank" href="https://leicloud.ulearning.cn/' + c + '" style="color: red">↳swf文档下载↲</a>';
                 }
-                $('.doc-card', arguments[1]).after(d)
+                d += '</div>'
+            } else {
+                d = '<div class="view-btn" style="text-align: center;"><a id="file-url" target="_blank" href="https://leicloud.ulearning.cn/' + c + g + '" style="color: red">↳文档下载↲</a></div>';
+            }
+            $('.doc-card', arguments[1]).after(d)
         })
     }, function () {
         arguments[1].disconnect();
