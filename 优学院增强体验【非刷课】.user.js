@@ -442,7 +442,6 @@ var func = [function () {
             setTimeout(func[arguments[2]], 500, arguments[0], arguments[1] + 1, arguments[2]);
         }
     }, function () {
-        console.log(this);
         var a = $(this).attr('data-id');
         var b = $(this).attr('data-title');
         var c = $(this).attr('data-location');
