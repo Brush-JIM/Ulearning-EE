@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         优学院增强
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.06.07
+// @version      2020.06.08
 // @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除浏览器兼容、直播间自动签到、资源页增加下载按钮、课件内资源增加下载地址
 // @author       Brush-JIM
 // @match        *.ulearning.cn/*
@@ -37,7 +37,7 @@ var obj = {
     , Show_Live: true // true: 显示直播流链接，false: 禁用显示
     , Browser_Compatible: false // true: 启用浏览器兼容，false: 禁用浏览器兼容。正常的浏览器无需开启，开启也不会有影响，主要用于Edge浏览器
     , Live_Sign: false // true: 启用直播间自动签到，false: 禁用直播间签到
-    , Add_Button: true // true: 启用增加下载按钮，false: 禁用增加按钮；注意！点击“下载”则同时使资源更改为已读状态
+    , Add_Button: true // true: 启用资源页面增加下载按钮，false: 禁用增加按钮；注意！点击“下载”则同时使资源更改为已读状态
     , Class_Url: true // true: 显示课程内资源的下载地址【如文档、视频】，false: 禁用显示
 }
 var Value = {
