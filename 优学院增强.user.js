@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         优学院增强
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.06.08
+// @version      2020.09.08
 // @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除浏览器兼容、直播间自动签到、资源页增加下载按钮、课件内资源增加下载地址
 // @author       Brush-JIM
 // @match        *.ulearning.cn/*
@@ -26,7 +26,7 @@
 // ==/UserScript==
 
 var obj = {
-    /*
+     /*
     如果需要启用相应功能，则将 false 改为 true
     如果需要禁用相应功能，则将 true 改为 false
     */
@@ -37,8 +37,9 @@ var obj = {
     , Show_Live: true // true: 显示直播流链接，false: 禁用显示
     , Browser_Compatible: false // true: 启用浏览器兼容，false: 禁用浏览器兼容。正常的浏览器无需开启，开启也不会有影响，主要用于Edge浏览器
     , Live_Sign: false // true: 启用直播间自动签到，false: 禁用直播间签到
-    , Add_Button: true // true: 启用资源页面增加下载按钮，false: 禁用增加按钮；注意！点击“下载”则同时使资源更改为已读状态
-    , Class_Url: true // true: 显示课程内资源的下载地址【如文档、视频】，false: 禁用显示
+    , Add_Button: true // true: 启用增加下载按钮，false: 禁用增加按钮；注意！点击“下载”则同时使资源更改为已读状态
+    , Class_Url: true // true: 显示课程内的下载地址【如文档、视频】，false: 禁用显示
+    , Multiple_Page: false
 }
 var Value = {
     userId: '',
@@ -249,6 +250,7 @@ var func = [function () {
             setTimeout(func[arguments[0]], 1000, arguments[0]);
         }
     }, function () {
+        func[arguments[0] - 4].call(window, '.script_tips {margin-bottom: 15px;text-align: center;line-height: 32px;font-size: 12px;}')
         func[arguments[0] + 5].call(window, arguments[0] + 5)
         func[arguments[0] + 3].call(window, arguments[0] + 3);
         $(function () {
@@ -281,7 +283,7 @@ var func = [function () {
             arguments[1].innerHTML = '---------- M3U8文件 ----------<br />';
         }
         var li = arguments[1];
-        li.className = 'web-flower';
+        li.className = 'script_tips';
         func[arguments[2] - 9].call(this, {
             method: 'GET',
             url: online_url,
@@ -364,7 +366,7 @@ var func = [function () {
                 Value.live_url = arguments[0];
                 var li = document.createElement('li');
                 li.innerHTML = '---------- 直播流地址 ----------<br />';
-                li.className = 'web-flower';
+                li.className = 'script_tips';
                 li.innerHTML += '<a style="color: white" target="_blank" href="' + arguments[0] + '">直播流地址【右键复制链接地址】</a><br />';
                 li.innerHTML += '---------- END ----------<br />';
                 $('ul[class="ppt-chat-list"]').append(li);
@@ -549,6 +551,16 @@ var func = [function () {
         func[26].call(window, 26);
         func[27].call(window, 27);
         func[25].call(window, 25);
+    }, function () {
+        _self.XMLHttpRequest.prototype.open_ = _self.XMLHttpRequest.prototype.open;
+        _self.XMLHttpRequest.prototype.open = function () {
+            console.log(arguments[1]);
+            if (arguments[1].indexOf('https://api.ulearning.cn/studyrecord/heartbeat/') !== -1) {
+                this.send = function () { ;
+                }
+            }
+            _self.XMLHttpRequest.prototype.open_.apply(this, arguments);
+        }
     }
 ]
 if (window.location.href.indexOf('www.ulearning.cn/ulearning/index.html') !== -1) {
@@ -567,4 +579,5 @@ if (window.location.href.indexOf('live.polyv.cn/watch/') !== -1) {
 if (window.location.href.indexOf('ua.ulearning.cn') !== -1) {
     func[18].call(window, 18);
     func[25].call(window, 25);
+    func[29].call(window, 28);
 }
