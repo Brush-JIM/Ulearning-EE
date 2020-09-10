@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         优学院增强
 // @namespace    https://greasyfork.org/zh-CN/scripts/383596
-// @version      2020.09.08
+// @version      2020.09.10
 // @description  自动登录、作业实时自动查重、直播M3U8文件下载、直播流获取、解除浏览器兼容、直播间自动签到、资源页增加下载按钮、课件内资源增加下载地址
 // @author       Brush-JIM
 // @match        *.ulearning.cn/*
@@ -554,7 +554,6 @@ var func = [function () {
     }, function () {
         _self.XMLHttpRequest.prototype.open_ = _self.XMLHttpRequest.prototype.open;
         _self.XMLHttpRequest.prototype.open = function () {
-            console.log(arguments[1]);
             if (arguments[1].indexOf('https://api.ulearning.cn/studyrecord/heartbeat/') !== -1) {
                 this.send = function () { ;
                 }
